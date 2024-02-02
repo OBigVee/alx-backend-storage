@@ -1,6 +1,6 @@
 # Redis Basic
 
-### Resources
+### Resources to read or watch
 
 * [Redis commands](https://redis.io/commands/)
 * [Redis python client](https://redis-py.readthedocs.io/en/stable/)
