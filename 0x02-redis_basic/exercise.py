@@ -4,6 +4,26 @@
 import redis
 from uuid import uuid4
 from typing import Optional, Union, Callable
+from functools import wraps
+
+
+def count_calls(m: Callable) -> Callable:
+    """returns callable"""
+    mKey = m.__qualname__
+
+    @wraps(m)
+    def wrapper(self, *args, **kwds):
+        """
+        Wrapper function
+        function increments the count for mKey everytime mkey
+        mKey method is called.
+        return: Counts
+        """
+        self._redis.incr(mKey)
+        return m(self, *args, **kwds)
+
+    # return the value returned in  count_call method
+    return wrapper
 
 
 class Cache:
@@ -21,10 +41,10 @@ class Cache:
         self._redis.mset({key: data})
 
         return key
-    
-    def get(self, key:str, fn: Optional[Callable]) -> Union[str, bytes, int, float]:
-        """ returns data of a key in a decoded form.
-        
+
+    def get(self, key: str, fn: Optional[Callable]) -> Union[str, bytes, int, float]:
+        """returns data of a key in a decoded form.
+
         key: str
         fn: Callable argument
         """
@@ -35,13 +55,10 @@ class Cache:
             return fn(data)
         return data
 
-    
-    def get_str(self, data : str) -> str:
-        """decode byte to str """
+    def get_str(self, data: str) -> str:
+        """decode byte to str"""
         return data.decode("utf-8")
-    
+
     def get_int(self, data: str) -> int:
         """decode byte to int"""
         return int(data)
-
-    
