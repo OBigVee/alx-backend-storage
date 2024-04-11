@@ -1,0 +1,2 @@
+// sript list all documents with name="Holberton school" in the collection school
+db.school.find_one({"name":"Holberton school"});
