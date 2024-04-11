@@ -1,4 +1,4 @@
 // list all databases
 service mongod star
-show databases;
+show dbs;
 service mongod stop
