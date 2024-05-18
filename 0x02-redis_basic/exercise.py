@@ -93,5 +93,5 @@ class Cache:
         try:
             data = int(data.decode("utf-8"))
         except Exception:
-            value = 0
+            data = 0
         return data
