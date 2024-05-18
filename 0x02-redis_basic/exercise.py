@@ -12,7 +12,7 @@ def count_calls(m: Callable) -> Callable:
     mKey = m.__qualname__
 
     @wraps(m)
-    def wrapper(self, *args, **kwds):
+    def wrapper(self, *args, **kwargs):
         """
         Wrapper function
         function increments the count for mKey everytime mkey
@@ -20,9 +20,28 @@ def count_calls(m: Callable) -> Callable:
         return: Counts
         """
         self._redis.incr(mKey)
-        return m(self, *args, **kwds)
+        return m(self, *args, **kwargs)
 
     # return the value returned in  count_call method
+    return wrapper
+
+
+def call_history(m: Callable) -> Callable:
+    """decorator stores the history of inputs for a particular
+    function"""
+
+    mKey = m.__qualname__
+    inputs = mKey + ":inputs"
+    outputs = mKey + ":outputs"
+
+    @wraps(m)
+    def wrapper(self, *args, **kwargs):
+        """_summary_"""
+        input = str(args)
+        self._redis.rpush(inputs, input)
+        output = str(m(self, *args, **kwargs))
+        self._redis.rpush(outputs, output)
+
     return wrapper
 
 
@@ -33,6 +52,8 @@ class Cache:
         self._redis = redis.Redis()
         self._redis.flushdb()
 
+    @count_calls
+    @call_history
     def store(self, data: Union[str, bytes, int, float]) -> str:
         """method generates a random key and stores the input
         data in Redis using the random key and return the key
@@ -42,7 +63,13 @@ class Cache:
 
         return key
 
-    def get(self, key: str, fn: Optional[Callable]) -> Union[str, bytes, int, float]:
+    def get(
+        self,
+        key: str, 
+        fn: Optional[Callable] = None) -> Union[
+            str,
+            bytes,
+            int, float]:
         """returns data of a key in a decoded form.
 
         key: str
@@ -51,14 +78,20 @@ class Cache:
         data = self._redis.get(key)
 
         # conserve Redis.get behaviour if key does not exit
-        if fn is not None:
-            return fn(data)
+        if fn:
+            data = fn(data)
         return data
 
     def get_str(self, data: str) -> str:
         """decode byte to str"""
+        data = self._redis.get(data)
         return data.decode("utf-8")
 
     def get_int(self, data: str) -> int:
         """decode byte to int"""
-        return int(data)
+        data = self._redis.get(data)
+        try:
+            data = int(data.decode("utf-8"))
+        except Exception:
+            value = 0
+        return value
