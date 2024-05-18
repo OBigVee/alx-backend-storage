@@ -30,17 +30,20 @@ def call_history(m: Callable) -> Callable:
     """decorator stores the history of inputs for a particular
     function"""
 
-    mKey = m.__qualname__
-    inputs = mKey + ":inputs"
-    outputs = mKey + ":outputs"
+    # mKey = m.__qualname__
+    # inputs = mKey + ":inputs"
+    # outputs = mKey + ":outputs"
 
     @wraps(m)
     def wrapper(self, *args, **kwargs):
         """_summary_"""
         input = str(args)
-        self._redis.rpush(inputs, input)
+        # self._redis.rpush(inputs, input)
+        # output = str(m(self, *args, **kwargs))
+        # self._redis.rpush(outputs, output)
+        self._redis.rpush(m.__qualname__ + ":inputs", input)
         output = str(m(self, *args, **kwargs))
-        self._redis.rpush(outputs, output)
+        self._redis.rpush(m.__qualname__ + ":outputs", output)
 
     return wrapper
 
@@ -65,7 +68,7 @@ class Cache:
 
     def get(
         self,
-        key: str, 
+        key: str,
         fn: Optional[Callable] = None) -> Union[
             str,
             bytes,
